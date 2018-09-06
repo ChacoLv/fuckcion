@@ -1,15 +1,16 @@
-from datetime import datetime, timedelta
-import time
+# from datetime import datetime, timedelta
+import time, datetime
 import pandas as pd
 from email.mime.text import MIMEText
 from smtplib import SMTP
-
+pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
+pd.set_option('display.max_rows', 2000)
 
 # sleep
 def next_run_time(time_interval, ahead_time=1):
 
     if time_interval.endswith('m'):
-        now_time = datetime.now()
+        now_time = datetime.datetime.now()
         time_interval = int(time_interval.strip('m'))
 
         target_min = (int(now_time.minute / time_interval) + 1) * time_interval
@@ -18,14 +19,14 @@ def next_run_time(time_interval, ahead_time=1):
         else:
             if now_time.hour == 23:
                 target_time = now_time.replace(hour=0, minute=0, second=0, microsecond=0)
-                target_time += timedelta(days=1)
+                target_time += datetime.timedelta(days=1)
             else:
                 target_time = now_time.replace(hour=now_time.hour + 1, minute=0, second=0, microsecond=0)
 
         # sleep直到靠近目标时间之前
-        if (target_time - datetime.now()).seconds < ahead_time+1:
+        if (target_time - datetime.datetime.now()).seconds < ahead_time+1:
             print('距离target_time不足', ahead_time, '秒，下下个周期再运行')
-            target_time += timedelta(minutes=time_interval)
+            target_time += datetime.timedelta(minutes=time_interval)
         print('下次运行时间', target_time)
         return target_time
     else:
@@ -42,12 +43,27 @@ def get_okex_candle_data(exchange, symbol, time_interval):
     df = pd.DataFrame(content, dtype=float)
     df.rename(columns={0: 'MTS', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, inplace=True)
     df['candle_begin_time'] = pd.to_datetime(df['MTS'], unit='ms')
-    df['candle_begin_time_GMT8'] = df['candle_begin_time'] + timedelta(hours=8)
+    df['candle_begin_time_GMT8'] = df['candle_begin_time'] + datetime.timedelta(hours=8)
     df = df[['candle_begin_time_GMT8', 'open', 'high', 'low', 'close', 'volume']]
 
     return df
 
+#获取bfx对k线数据
+def get_bitfinex_candle_data(exchange, symbol, time_interval,limit):
 
+    # 抓取数据
+    time_dis = int(time_interval.strip("m")) * limit * 60 * 1000     #为了获取limit数量的K线进行计算
+    since = exchange.milliseconds() - time_dis       #计算since时间， 从现在的时间减去相应k线数量的时间
+    content = exchange.fetch_ohlcv(symbol, timeframe=time_interval, since=since, limit=limit)
+
+    # 整理数据
+    df = pd.DataFrame(content, dtype=float)
+    df.rename(columns={0: 'MTS', 1: 'open', 2: 'high', 3: 'low', 4: 'close', 5: 'volume'}, inplace=True)
+    df['candle_begin_time'] = pd.to_datetime(df['MTS'], unit='ms')
+    df['candle_begin_time_GMT8'] = df['candle_begin_time'] + datetime.timedelta(hours=8)
+    df = df[['candle_begin_time_GMT8', 'open', 'high', 'low', 'close', 'volume']]
+    df.rename(columns={'candle_begin_time_GMT8': 'candle_begin_time'}, inplace=True)
+    return df
 # 下单
 def place_order(exchange, order_type, buy_or_sell, symbol, price, amount):
     """
@@ -93,8 +109,9 @@ def place_order(exchange, order_type, buy_or_sell, symbol, price, amount):
     exit()
 
 
+
 # 自动发送邮件
-def auto_send_email(to_address, subject, content, from_address='xing_buxing@foxmail.com', if_add_time=True):
+def auto_send_email(to_address, subject, content, from_address='673586306@qq.com', if_add_time=True):
     """
     :param to_address:
     :param subject:
@@ -105,15 +122,15 @@ def auto_send_email(to_address, subject, content, from_address='xing_buxing@foxm
     """
     try:
         if if_add_time:
-            msg = MIMEText(datetime.now().strftime("%m-%d %H:%M:%S") + '\n\n' + content)
+            msg = MIMEText(datetime.datetime.now().strftime("%m-%d %H:%M:%S") + '\n\n' + content)
         else:
             msg = MIMEText(content)
-        msg["Subject"] = subject + ' ' + datetime.now().strftime("%m-%d %H:%M:%S")
+        msg["Subject"] = subject + ' ' + datetime.datetime.now().strftime("%m-%d %H:%M:%S")
         msg["From"] = from_address
         msg["To"] = to_address
 
         username = from_address
-        password = 'your_password'
+        password = 'hlsgfjiresakbeei'
 
         server = SMTP('smtp.qq.com', port=587)
         server.starttls()

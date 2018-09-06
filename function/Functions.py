@@ -81,8 +81,6 @@ def get_hist_candle_bitfinex(symbol, time_interval, count):
             df['candle_begin_time'] = df['candle_begin_time'] + datetime.timedelta(hours=8)
             df = df[['candle_begin_time', 'open', 'high', 'low', 'close', 'volume']]
             all_data = all_data.append(df)
-            print(all_data)
-            exit()
             time.sleep(10)                   #bitfinex对rest api调用有限制，过于频繁会报ddos错误
         except Exception as e:
             print("出现异常:", e)
