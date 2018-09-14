@@ -9,7 +9,7 @@ exchange = ccxt.bitfinex({
 exchange.apiKey = "uSuQ8FMuuk1BJgQAmyQVbLtIHm4wGn0nuIL00cvIjW8"
 exchange.secret = "0myTvqw9Hu8amQ4TgqZdv4HEVthohQAM0558qpi3olR"
 
-symbol = "EOS/USDT"
+symbol = "ETH/USDT"
 '''
 #获取margin余额
 margin_balance = exchange.fetch_balance({'type': 'trading'})
@@ -33,12 +33,20 @@ result = exchange.create_order(symbol=symbol, type="limit", side='sell', amount=
 # 下margin market 空单，限价单
 params = {'type': 'limit', "price":"8"}
 result = exchange.create_market_sell_order(symbol=symbol, amount=2, params=params)
-'''
+
 #获取先有margin的仓位
 margin_pos = exchange.private_post_positions()
 params = {'type': 'market'}
-# order_info = exchange.create_market_sell_order(symbol=symbol, amount=2, params=params)
+amount = margin_pos[0]['amount']
+print(amount)
 print(margin_pos)
+# ord = exchange.create_market_buy_order(symbol=symbol, amount=0.041, params=params)
+# print(ord)
+
+
+
+
+# order_info = exchange.create_market_sell_order(symbol=symbol, amount=2, params=params)
 # print(order_info)
 
 # 下margin market单
@@ -56,7 +64,9 @@ print(margin_pos)
 #取消
 # can_info = exchange.cancel_order(id=16318789828)
 # print(can_info)
+'''
 
-
+margin_pos = exchange.private_post_positions()
+print("margin info:", margin_pos)
 
 

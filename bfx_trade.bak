@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3.6
+#coding = UTF-8
 import ccxt
 import pandas as pd
 import time, datetime
@@ -26,12 +28,7 @@ time_interval = '15m'  # 间隔运行时间，不能低于5min
 count = 1000
 leverage_rate = 2.8
 # 设置翻墙代理
-exchange = ccxt.bitfinex({
-    'proxies': {
-        'http': 'http://127.0.0.1:1087',
-        'https': 'http://127.0.0.1:1087',
-    },
-})
+exchange = ccxt.bitfinex()
 
 exchange.apiKey = "uSuQ8FMuuk1BJgQAmyQVbLtIHm4wGn0nuIL00cvIjW8"
 exchange.secret = "0myTvqw9Hu8amQ4TgqZdv4HEVthohQAM0558qpi3olR"
@@ -94,22 +91,22 @@ while True:
     signal = df.iloc[-1]['signal']
     print(df)
     print('\n交易信号', signal)
-    exit()
     # 获取现有账号margin 仓位
     margin_pos = exchange.private_post_positions()
     try:
-        #如果有margin仓位不为空，并且为卖出信号
-        if len(margin_pos) != 0 and signal == 0:
+        if len(margin_pos)!=0 and signal == 0:
             print('\n卖出')
+            #如果是做多单的话，则需要通过sell 来卖掉这些多单
             margin_pos_amount = float(exchange.private_post_positions()[0]['amount'])
             margin_profit = float(exchange.private_post_positions()[0]["pl"])
-            #如果是做多单的话，则需要通过sell 来卖掉这些多单
-            if margin_pos_amount > 0:
+            if margin_pos_amount >0:
+                # 清空现有仓位,下市价单
                 order_info = exchange.create_market_sell_order(symbol=symbol, amount=margin_pos_amount, params=params)
                 price = order_info['info']['price']
+
             #如果是做多单的话，则需要通过buy 来卖掉这些空单
             elif margin_pos_amount < 0:
-                order_info = exchange.create_market_buy_order(symbol=symbol, amount=margin_pos_amount, params=params)
+                order_info = exchange.create_market_buy_order(symbol=symbol,amount=margin_pos_amount,params=params)
                 price = order_info['info']['price']
 
             # 邮件标题
@@ -157,5 +154,5 @@ while True:
     # =====本次交易结束
     print(email_title)
     print(email_content)
-    print('=====本次运行完毕\n')
+    print('=====本次运行完毕\n\n\n')
     time.sleep(6 * 1)
